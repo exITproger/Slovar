@@ -55,11 +55,11 @@ public class DictionaryManager {
         return digitsDictionary.getAllEntries();
     }
 
-    public String getLatinValueRule() {
+    public String getLatinKeyRule() {
         return latinDictionary.getKeyRuleDescription();
     }
 
-    public String getDigitsValueRule() {
+    public String getDigitsKeyRule() {
         return digitsDictionary.getKeyRuleDescription();
     }
 }
