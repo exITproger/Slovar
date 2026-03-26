@@ -1,4 +1,4 @@
-public class DictionaryException extends Exception {
+public class DictionaryException extends RuntimeException {
     public DictionaryException(String message) {
         super(message);
     }
