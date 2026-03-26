@@ -7,6 +7,6 @@ interface Dictionary {
     void deleteByKey(String key);
     Optional<Entry> findByKey(String key);
     List<Entry> getAllEntries();
-    boolean isValidValue(String value);
-    String getValueRuleDescription();
+    boolean isValidKey(String value);
+    String getKeyRuleDescription();
 }

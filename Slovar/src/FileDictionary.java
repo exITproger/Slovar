@@ -4,11 +4,11 @@ import java.util.*;
 
 public class FileDictionary implements Dictionary {
     private final Map<String, Entry> storage = new HashMap<>();
-    private final ValueValidator valueValidator;
+    private final KeyValidator keyValidator;
     private String currentFilePath;
 
-    public FileDictionary(ValueValidator valueValidator) {
-        this.valueValidator = valueValidator;
+    public FileDictionary(KeyValidator keyValidator) {
+        this.keyValidator = keyValidator;
     }
 
     @Override
@@ -37,10 +37,13 @@ public class FileDictionary implements Dictionary {
                 String key = parts[0].trim();
                 String value = parts[1].trim();
 
-                // Ключ может быть любым, проверяем только значение
-                if (!valueValidator.isValid(value)) {
-                    throw new DictionaryException("Значение '" + value + "' не соответствует правилам: " +
-                            valueValidator.getValidationRuleDescription());
+                if (!keyValidator.isValid(key)) {
+                    throw new DictionaryException("Ключ '" + key + "' не соответствует правилам: " +
+                            keyValidator.getValidationRuleDescription());
+                }
+
+                if (value.isBlank()) {
+                    throw new DictionaryException("Значение не может быть пустым");
                 }
 
                 storage.put(key, new Entry(key, value));
@@ -75,14 +78,13 @@ public class FileDictionary implements Dictionary {
             throw new ValidationException("Ключ и значение не могут быть null");
         }
 
-        if (key.isBlank()) {
-            throw new ValidationException("Ключ не может быть пустым");
+        if (!keyValidator.isValid(key)) {
+            throw new ValidationException("Ключ '" + key + "' не соответствует правилам: " +
+                    keyValidator.getValidationRuleDescription());
         }
 
-        // Проверяем только значение, ключ может быть любым
-        if (!valueValidator.isValid(value)) {
-            throw new ValidationException("Значение '" + value + "' не соответствует правилам: " +
-                    valueValidator.getValidationRuleDescription());
+        if (value.isBlank()) {
+            throw new ValidationException("Значение не может быть пустым");
         }
 
         storage.put(key, new Entry(key, value));
@@ -108,12 +110,12 @@ public class FileDictionary implements Dictionary {
     }
 
     @Override
-    public boolean isValidValue(String value) {
-        return valueValidator.isValid(value);
+    public boolean isValidKey(String key) {
+        return keyValidator.isValid(key);
     }
 
     @Override
-    public String getValueRuleDescription() {
-        return valueValidator.getValidationRuleDescription();
+    public String getKeyRuleDescription() {
+        return keyValidator.getValidationRuleDescription();
     }
 }

@@ -56,10 +56,10 @@ public class DictionaryManager {
     }
 
     public String getLatinValueRule() {
-        return latinDictionary.getValueRuleDescription();
+        return latinDictionary.getKeyRuleDescription();
     }
 
     public String getDigitsValueRule() {
-        return digitsDictionary.getValueRuleDescription();
+        return digitsDictionary.getKeyRuleDescription();
     }
 }
