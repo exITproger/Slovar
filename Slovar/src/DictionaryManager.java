@@ -5,9 +5,9 @@ public class DictionaryManager {
     private final Dictionary latinDictionary;
     private final Dictionary digitsDictionary;
 
-    public DictionaryManager(Dictionary latinDictionary, Dictionary digitsDictionary) {
-        this.latinDictionary = latinDictionary;
-        this.digitsDictionary = digitsDictionary;
+    public DictionaryManager() {
+        this.latinDictionary = DictionaryFactory.createLatinDictionary();
+        this.digitsDictionary = DictionaryFactory.createDigitsDictionary();
     }
 
     public Dictionary getLatinDictionary() {

@@ -24,6 +24,8 @@ public class FileDictionary implements Dictionary {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             String line;
             int lineNumber = 0;
+            int skippedLines = 0;
+
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 line = line.trim();
@@ -31,23 +33,34 @@ public class FileDictionary implements Dictionary {
 
                 String[] parts = line.split(":", 2);
                 if (parts.length != 2) {
-                    throw new DictionaryException("Неверный формат строки " + lineNumber + ": " + line);
+                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (неверный формат): " + line);
+                    skippedLines++;
+                    continue;
                 }
 
                 String key = parts[0].trim();
                 String value = parts[1].trim();
 
                 if (!keyValidator.isValid(key)) {
-                    throw new DictionaryException("Ключ '" + key + "' не соответствует правилам: " +
-                            keyValidator.getValidationRuleDescription());
+                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (ключ '" + key + "' не соответствует правилам: " +
+                            keyValidator.getValidationRuleDescription() + ")");
+                    skippedLines++;
+                    continue;
                 }
 
                 if (value.isBlank()) {
-                    throw new DictionaryException("Значение не может быть пустым");
+                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (пустое значение): " + line);
+                    skippedLines++;
+                    continue;
                 }
 
                 storage.put(key, new Entry(key, value));
             }
+
+            if (skippedLines > 0) {
+                IO.println("Загружено " + storage.size() + " записей, пропущено " + skippedLines + " строк");
+            }
+
         } catch (IOException e) {
             throw new DictionaryException("Ошибка чтения файла: " + filePath, e);
         }
@@ -87,13 +100,35 @@ public class FileDictionary implements Dictionary {
             throw new ValidationException("Значение не может быть пустым");
         }
 
+        if (storage.containsKey(key)) {
+            throw new ValidationException("Запись с ключом '" + key + "' уже существует");
+        }
+
         storage.put(key, new Entry(key, value));
-        saveToFile();
+        appendToFile(key, value);
+    }
+
+    private void appendToFile(String key, String value) {
+        if (currentFilePath == null) {
+            throw new DictionaryException("Не указан файл для сохранения");
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                Paths.get(currentFilePath),
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND
+        )) {
+            writer.write(key + ":" + value);
+            writer.newLine();
+        } catch (IOException e) {
+            throw new DictionaryException("Ошибка сохранения в файл: " + currentFilePath, e);
+        }
     }
 
     @Override
     public void deleteByKey(String key) {
-        if (storage.remove(key) == null) {
+        Entry removed = storage.remove(key);
+        if (removed == null) {
             throw new DictionaryException("Запись с ключом '" + key + "' не найдена");
         }
         saveToFile();

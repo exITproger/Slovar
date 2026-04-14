@@ -1,184 +1,38 @@
 import java.util.*;
 
 void main() {
-    String latinFile = "dictionary_latin.txt";
-    String digitsFile = "dictionary_digits.txt";
-
-    Dictionary latinDict = DictionaryFactory.createLatinDictionary();
-    Dictionary digitsDict = DictionaryFactory.createDigitsDictionary();
-    DictionaryManager manager = new DictionaryManager(latinDict, digitsDict);
     Scanner scanner = new Scanner(System.in);
+    DictionaryManager manager = new DictionaryManager();
 
-    try {
-        manager.loadAll(latinFile, digitsFile);
-        IO.println("Словари загружены успешно");
-    } catch (DictionaryException e) {
-        IO.println("Ошибка загрузки: " + e.getMessage());
-        IO.println("Будут созданы новые пустые словари");
-    }
+    boolean latinLoaded = false;
+    boolean digitsLoaded = false;
 
     while (true) {
         IO.println();
         IO.println("ГЛАВНОЕ МЕНЮ");
-        IO.println("1. Просмотр содержимого словарей");
-        IO.println("2. Работа со словарём");
+        IO.println("1. Латинский словарь (ключ: 4 лат. буквы)");
+        IO.println("2. Цифровой словарь (ключ: 5 цифр)");
         IO.println("0. Выход");
-        IO.print("Выберите действие: ");
+        IO.print("Выберите словарь: ");
 
         String choice = scanner.nextLine().trim();
 
         switch (choice) {
             case "1":
-                IO.println();
-                IO.println("СОДЕРЖИМОЕ СЛОВАРЕЙ");
-                IO.println();
-
-                IO.println("ЛАТИНСКИЙ СЛОВАРЬ (гипотетический язык)");
-                IO.println("Правило: " + manager.getLatinKeyRule());
-                IO.println("Значение (перевод на русский): любой текст");
-                IO.println();
-
-                List<Entry> latinEntries = manager.getAllLatinEntries();
-                if (latinEntries.isEmpty()) {
-                    IO.println("пусто");
-                } else {
-                    for (Entry entry : latinEntries) {
-                        IO.println(entry);
-                    }
+                if (!latinLoaded) {
+                    latinLoaded = loadDictionary(scanner, manager.getLatinDictionary(), "латинского", "dictionary_latin.txt");
                 }
-
-                IO.println();
-                IO.println("ЦИФРОВОЙ СЛОВАРЬ (гипотетический язык)");
-                IO.println("Правило: " + manager.getDigitsKeyRule());
-                IO.println("Значение (перевод на русский): любой текст");
-                IO.println();
-
-                List<Entry> digitsEntries = manager.getAllDigitsEntries();
-                if (digitsEntries.isEmpty()) {
-                    IO.println("пусто");
-                } else {
-                    for (Entry entry : digitsEntries) {
-                        IO.println(entry);
-                    }
+                if (latinLoaded) {
+                    workWithDictionary(scanner, manager.getLatinDictionary(), "ЛАТИНСКИЙ", manager.getLatinKeyRule());
                 }
-
-                IO.println();
-                IO.print("Нажмите Enter для продолжения...");
-                scanner.nextLine();
                 break;
 
             case "2":
-                while (true) {
-                    IO.println();
-                    IO.println("ВЫБОР СЛОВАРЯ");
-                    IO.println("1. Латинский словарь (ключ: 4 лат. буквы)");
-                    IO.println("2. Цифровой словарь (ключ: 5 цифр)");
-                    IO.println("0. Назад");
-                    IO.print("Ваш выбор: ");
-
-                    String dictChoice = scanner.nextLine().trim();
-                    Dictionary dict = null;
-                    String dictName = "";
-                    String keyRule = "";
-
-                    switch (dictChoice) {
-                        case "1":
-                            dict = manager.getLatinDictionary();
-                            dictName = "ЛАТИНСКИЙ";
-                            keyRule = manager.getLatinKeyRule();
-                            break;
-                        case "2":
-                            dict = manager.getDigitsDictionary();
-                            dictName = "ЦИФРОВОЙ";
-                            keyRule = manager.getDigitsKeyRule();
-                            break;
-                        case "0":
-                            break;
-                        default:
-                            IO.println("Неверный выбор.");
-                            continue;
-                    }
-
-                    if (dictChoice.equals("0")) break;
-
-                    while (true) {
-                        IO.println();
-                        IO.println("РАБОТА СО СЛОВАРЁМ: " + dictName);
-                        IO.println("Правило для ключа: " + keyRule);
-                        IO.println("Значение (перевод): любой текст");
-                        IO.println();
-                        IO.println("1. Добавить запись");
-                        IO.println("2. Удалить запись");
-                        IO.println("3. Найти запись");
-                        IO.println("0. Назад");
-                        IO.print("Выберите действие: ");
-
-                        String opChoice = scanner.nextLine().trim();
-
-                        switch (opChoice) {
-                            case "1":
-                                IO.println();
-                                IO.println("ДОБАВЛЕНИЕ ЗАПИСИ");
-                                IO.print("Введите ключ (слово на гипотетическом языке): ");
-                                String key = scanner.nextLine().trim();
-                                IO.print("Введите перевод на русский: ");
-                                String value = scanner.nextLine().trim();
-
-                                try {
-                                    dict.addEntry(key, value);
-                                    IO.println("Запись успешно добавлена");
-                                } catch (DictionaryException e) {
-                                    IO.println("Ошибка: " + e.getMessage());
-                                }
-
-                                IO.print("Нажмите Enter для продолжения...");
-                                scanner.nextLine();
-                                break;
-
-                            case "2":
-                                IO.println();
-                                IO.println("УДАЛЕНИЕ ЗАПИСИ");
-                                IO.print("Введите ключ для удаления: ");
-                                String delKey = scanner.nextLine().trim();
-
-                                try {
-                                    dict.deleteByKey(delKey);
-                                    IO.println("Запись успешно удалена");
-                                } catch (DictionaryException e) {
-                                    IO.println("Ошибка: " + e.getMessage());
-                                }
-
-                                IO.print("Нажмите Enter для продолжения...");
-                                scanner.nextLine();
-                                break;
-
-                            case "3":
-                                IO.println();
-                                IO.println("ПОИСК ЗАПИСИ");
-                                IO.print("Введите ключ для поиска: ");
-                                String searchKey = scanner.nextLine().trim();
-
-                                Optional<Entry> result = dict.findByKey(searchKey);
-                                if (result.isPresent()) {
-                                    IO.println("Найдено: " + result.get());
-                                } else {
-                                    IO.println("Запись с ключом '" + searchKey + "' не найдена");
-                                }
-
-                                IO.print("Нажмите Enter для продолжения...");
-                                scanner.nextLine();
-                                break;
-
-                            case "0":
-                                break;
-
-                            default:
-                                IO.println("Неверный выбор.");
-                                continue;
-                        }
-
-                        if (opChoice.equals("0")) break;
-                    }
+                if (!digitsLoaded) {
+                    digitsLoaded = loadDictionary(scanner, manager.getDigitsDictionary(), "цифрового", "dictionary_digits.txt");
+                }
+                if (digitsLoaded) {
+                    workWithDictionary(scanner, manager.getDigitsDictionary(), "ЦИФРОВОЙ", manager.getDigitsKeyRule());
                 }
                 break;
 
@@ -190,4 +44,148 @@ void main() {
                 IO.println("Неверный выбор. Попробуйте снова.");
         }
     }
+}
+
+boolean loadDictionary(Scanner scanner, Dictionary dict, String dictType, String defaultPath) {
+    while (true) {
+        IO.println();
+        IO.println("ЗАГРУЗКА " + dictType.toUpperCase() + " СЛОВАРЯ");
+        IO.print("Введите путь к файлу (или 0 для выхода): ");
+        String filePath = scanner.nextLine().trim();
+
+        if (filePath.equals("0")) {
+            IO.println("Возврат в главное меню");
+            return false;
+        }
+
+        if (filePath.isEmpty()) {
+            filePath = defaultPath;
+            IO.println("Используем путь по умолчанию: " + filePath);
+        }
+
+        try {
+            dict.loadFromFile(filePath);
+            IO.println("Словарь успешно загружен из файла: " + filePath);
+            return true;
+        } catch (DictionaryException e) {
+            IO.println("ОШИБКА: " + e.getMessage());
+            IO.println("Файл не найден или повреждён. Попробуйте снова.");
+        }
+    }
+}
+
+void workWithDictionary(Scanner scanner, Dictionary dict, String dictName, String keyRule) {
+    while (true) {
+        IO.println();
+        IO.println("РАБОТА СО СЛОВАРЁМ: " + dictName);
+        IO.println("Правило для ключа: " + keyRule);
+        IO.println("Значение (перевод): любой текст");
+        IO.println();
+        IO.println("1. Просмотреть содержимое");
+        IO.println("2. Добавить запись");
+        IO.println("3. Удалить запись");
+        IO.println("4. Найти запись");
+        IO.println("0. Назад");
+        IO.print("Выберите действие: ");
+
+        String opChoice = scanner.nextLine().trim();
+
+        switch (opChoice) {
+            case "1":
+                viewDictionary(dict, dictName, keyRule);
+                break;
+
+            case "2":
+                addEntry(scanner, dict);
+                break;
+
+            case "3":
+                deleteEntry(scanner, dict);
+                break;
+
+            case "4":
+                findEntry(scanner, dict);
+                break;
+
+            case "0":
+                return;
+
+            default:
+                IO.println("Неверный выбор.");
+        }
+    }
+}
+
+void viewDictionary(Dictionary dict, String dictName, String keyRule) {
+    IO.println();
+    IO.println("СОДЕРЖИМОЕ " + dictName + " СЛОВАРЯ");
+    IO.println("Правило: " + keyRule);
+    IO.println();
+
+    List<Entry> entries = dict.getAllEntries();
+    if (entries.isEmpty()) {
+        IO.println("Словарь пуст");
+    } else {
+        for (Entry entry : entries) {
+            IO.println(entry);
+        }
+    }
+
+    IO.print("\nНажмите Enter для продолжения...");
+    new Scanner(System.in).nextLine();
+}
+
+void addEntry(Scanner scanner, Dictionary dict) {
+    IO.println();
+    IO.println("ДОБАВЛЕНИЕ ЗАПИСИ");
+    IO.print("Введите ключ: ");
+    String key = scanner.nextLine().trim();
+    IO.print("Введите значение (перевод): ");
+    String value = scanner.nextLine().trim();
+
+    try {
+        dict.addEntry(key, value);
+        IO.println("✓ Запись успешно добавлена");
+    } catch (ValidationException e) {
+        IO.println("✗ Ошибка валидации: " + e.getMessage());
+    } catch (DictionaryException e) {
+        IO.println("✗ Ошибка: " + e.getMessage());
+    }
+
+    IO.print("Нажмите Enter для продолжения...");
+    scanner.nextLine();
+}
+
+void deleteEntry(Scanner scanner, Dictionary dict) {
+    IO.println();
+    IO.println("УДАЛЕНИЕ ЗАПИСИ");
+    IO.print("Введите ключ для удаления: ");
+    String key = scanner.nextLine().trim();
+
+    try {
+        dict.deleteByKey(key);
+        IO.println("✓ Запись успешно удалена");
+    } catch (DictionaryException e) {
+        IO.println("✗ Ошибка: " + e.getMessage());
+    }
+
+    IO.print("Нажмите Enter для продолжения...");
+    scanner.nextLine();
+}
+
+void findEntry(Scanner scanner, Dictionary dict) {
+    IO.println();
+    IO.println("ПОИСК ЗАПИСИ");
+    IO.print("Введите ключ для поиска: ");
+    String key = scanner.nextLine().trim();
+
+    Optional<Entry> result = dict.findByKey(key);
+    if (result.isPresent()) {
+        IO.println("✓ Найдено: " + result.get());
+    } else {
+        IO.println("✗ Запись с ключом '" + key + "' не найдена");
+    }
+
+    IO.print("Нажмите Enter для продолжения...");
+    scanner.nextLine();
 }
