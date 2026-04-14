@@ -3,14 +3,12 @@ import java.util.*;
 void main() {
     Scanner scanner = new Scanner(System.in);
     DictionaryManager manager = new DictionaryManager();
-    String commonFile = "dictionary.txt";
 
     while (true) {
         IO.println();
         IO.println("ГЛАВНОЕ МЕНЮ");
         IO.println("1. Латинский словарь (ключ: 4 лат. буквы)");
         IO.println("2. Цифровой словарь (ключ: 5 цифр)");
-        IO.println("3. Просмотреть всё содержимое файла");
         IO.println("0. Выход");
         IO.print("Выберите действие: ");
 
@@ -30,11 +28,6 @@ void main() {
                     loadAndWork(scanner, manager.getDigitsDictionary(), "ЦИФРОВОЙ", manager.getDigitsKeyRule(), digitsPath);
                 }
                 break;
-
-            case "3":
-                viewAllFile(scanner, commonFile);
-                break;
-
             case "0":
                 IO.println("До свидания!");
                 return;
@@ -139,39 +132,6 @@ void viewDictionary(Dictionary dict, String dictName, String keyRule) {
     new Scanner(System.in).nextLine();
 }
 
-void viewAllFile(Scanner scanner, String filePath) {
-    IO.println();
-    IO.println("ВСЁ СОДЕРЖИМОЕ ФАЙЛА: " + filePath);
-    IO.println();
-
-    java.nio.file.Path path = java.nio.file.Paths.get(filePath);
-    if (!java.nio.file.Files.exists(path)) {
-        IO.println("Файл не существует");
-        IO.print("\nНажмите Enter для продолжения...");
-        scanner.nextLine();
-        return;
-    }
-
-    try (BufferedReader reader = java.nio.file.Files.newBufferedReader(path)) {
-        String line;
-        int lineNum = 0;
-        while ((line = reader.readLine()) != null) {
-            lineNum++;
-            line = line.trim();
-            if (!line.isEmpty()) {
-                IO.println(lineNum + ". " + line);
-            }
-        }
-        if (lineNum == 0) {
-            IO.println("Файл пуст");
-        }
-    } catch (IOException e) {
-        IO.println("Ошибка чтения файла: " + e.getMessage());
-    }
-
-    IO.print("\nНажмите Enter для продолжения...");
-    scanner.nextLine();
-}
 
 void addEntry(Scanner scanner, Dictionary dict) {
     IO.println();

@@ -65,13 +65,18 @@ public class FileDictionary implements Dictionary {
                 }
 
                 String key = parts[0].trim();
-                if (!keyValidator.isValid(key)) {
+                if (keyValidator.isValid(key) && storage.containsKey(key)) {
+                    newLines.add(key + ":" + storage.get(key).getValue());
+                } else if (!keyValidator.isValid(key)) {
                     newLines.add(line);
                 }
             }
 
             for (Entry entry : storage.values()) {
-                newLines.add(entry.getKey() + ":" + entry.getValue());
+                String entryLine = entry.getKey() + ":" + entry.getValue();
+                if (!newLines.contains(entryLine)) {
+                    newLines.add(entryLine);
+                }
             }
 
             Files.write(Paths.get(currentFilePath), newLines,
