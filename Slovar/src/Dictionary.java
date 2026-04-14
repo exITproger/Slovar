@@ -1,6 +1,5 @@
 import java.util.List;
 import java.util.Optional;
-/// интерфейс словаря
 interface Dictionary {
     void loadFromFile(String filePath);
     void addEntry(String key, String value);
