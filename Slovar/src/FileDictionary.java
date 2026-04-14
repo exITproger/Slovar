@@ -24,7 +24,6 @@ public class FileDictionary implements Dictionary {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             String line;
             int lineNumber = 0;
-            int skippedLines = 0;
 
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
@@ -32,35 +31,15 @@ public class FileDictionary implements Dictionary {
                 if (line.isEmpty()) continue;
 
                 String[] parts = line.split(":", 2);
-                if (parts.length != 2) {
-                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (неверный формат): " + line);
-                    skippedLines++;
-                    continue;
-                }
+                if (parts.length != 2) continue;
 
                 String key = parts[0].trim();
                 String value = parts[1].trim();
 
-                if (!keyValidator.isValid(key)) {
-                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (ключ '" + key + "' не соответствует правилам: " +
-                            keyValidator.getValidationRuleDescription() + ")");
-                    skippedLines++;
-                    continue;
+                if (keyValidator.isValid(key)) {
+                    storage.put(key, new Entry(key, value));
                 }
-
-                if (value.isBlank()) {
-                    IO.println("Предупреждение: строка " + lineNumber + " пропущена (пустое значение): " + line);
-                    skippedLines++;
-                    continue;
-                }
-
-                storage.put(key, new Entry(key, value));
             }
-
-            if (skippedLines > 0) {
-                IO.println("Загружено " + storage.size() + " записей, пропущено " + skippedLines + " строк");
-            }
-
         } catch (IOException e) {
             throw new DictionaryException("Ошибка чтения файла: " + filePath, e);
         }
@@ -71,15 +50,33 @@ public class FileDictionary implements Dictionary {
             throw new DictionaryException("Не указан файл для сохранения");
         }
 
-        try (BufferedWriter writer = Files.newBufferedWriter(
-                Paths.get(currentFilePath),
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
-        )) {
-            for (Entry entry : storage.values()) {
-                writer.write(entry.getKey() + ":" + entry.getValue());
-                writer.newLine();
+        try {
+            List<String> allLines = Files.readAllLines(Paths.get(currentFilePath));
+            List<String> newLines = new ArrayList<>();
+
+            for (String line : allLines) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                String[] parts = line.split(":", 2);
+                if (parts.length != 2) {
+                    newLines.add(line);
+                    continue;
+                }
+
+                String key = parts[0].trim();
+                if (!keyValidator.isValid(key)) {
+                    newLines.add(line);
+                }
             }
+
+            for (Entry entry : storage.values()) {
+                newLines.add(entry.getKey() + ":" + entry.getValue());
+            }
+
+            Files.write(Paths.get(currentFilePath), newLines,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
         } catch (IOException e) {
             throw new DictionaryException("Ошибка сохранения файла: " + currentFilePath, e);
         }
@@ -100,37 +97,16 @@ public class FileDictionary implements Dictionary {
             throw new ValidationException("Значение не может быть пустым");
         }
 
-        if (storage.containsKey(key)) {
-            throw new ValidationException("Запись с ключом '" + key + "' уже существует");
-        }
-
         storage.put(key, new Entry(key, value));
-        appendToFile(key, value);
-    }
-
-    private void appendToFile(String key, String value) {
-        if (currentFilePath == null) {
-            throw new DictionaryException("Не указан файл для сохранения");
-        }
-
-        try (BufferedWriter writer = Files.newBufferedWriter(
-                Paths.get(currentFilePath),
-                StandardOpenOption.CREATE,
-                StandardOpenOption.APPEND
-        )) {
-            writer.write(key + ":" + value);
-            writer.newLine();
-        } catch (IOException e) {
-            throw new DictionaryException("Ошибка сохранения в файл: " + currentFilePath, e);
-        }
+        saveToFile();
     }
 
     @Override
     public void deleteByKey(String key) {
-        Entry removed = storage.remove(key);
-        if (removed == null) {
+        if (!storage.containsKey(key)) {
             throw new DictionaryException("Запись с ключом '" + key + "' не найдена");
         }
+        storage.remove(key);
         saveToFile();
     }
 

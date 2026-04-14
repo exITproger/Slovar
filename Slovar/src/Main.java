@@ -3,37 +3,36 @@ import java.util.*;
 void main() {
     Scanner scanner = new Scanner(System.in);
     DictionaryManager manager = new DictionaryManager();
-
-    boolean latinLoaded = false;
-    boolean digitsLoaded = false;
+    String commonFile = "dictionary.txt";
 
     while (true) {
         IO.println();
         IO.println("ГЛАВНОЕ МЕНЮ");
         IO.println("1. Латинский словарь (ключ: 4 лат. буквы)");
         IO.println("2. Цифровой словарь (ключ: 5 цифр)");
+        IO.println("3. Просмотреть всё содержимое файла");
         IO.println("0. Выход");
-        IO.print("Выберите словарь: ");
+        IO.print("Выберите действие: ");
 
         String choice = scanner.nextLine().trim();
 
         switch (choice) {
             case "1":
-                if (!latinLoaded) {
-                    latinLoaded = loadDictionary(scanner, manager.getLatinDictionary(), "латинского", "dictionary_latin.txt");
-                }
-                if (latinLoaded) {
-                    workWithDictionary(scanner, manager.getLatinDictionary(), "ЛАТИНСКИЙ", manager.getLatinKeyRule());
+                String latinPath = getFilePath(scanner, "латинского");
+                if (latinPath != null) {
+                    loadAndWork(scanner, manager.getLatinDictionary(), "ЛАТИНСКИЙ", manager.getLatinKeyRule(), latinPath);
                 }
                 break;
 
             case "2":
-                if (!digitsLoaded) {
-                    digitsLoaded = loadDictionary(scanner, manager.getDigitsDictionary(), "цифрового", "dictionary_digits.txt");
+                String digitsPath = getFilePath(scanner, "цифрового");
+                if (digitsPath != null) {
+                    loadAndWork(scanner, manager.getDigitsDictionary(), "ЦИФРОВОЙ", manager.getDigitsKeyRule(), digitsPath);
                 }
-                if (digitsLoaded) {
-                    workWithDictionary(scanner, manager.getDigitsDictionary(), "ЦИФРОВОЙ", manager.getDigitsKeyRule());
-                }
+                break;
+
+            case "3":
+                viewAllFile(scanner, commonFile);
                 break;
 
             case "0":
@@ -46,42 +45,47 @@ void main() {
     }
 }
 
-boolean loadDictionary(Scanner scanner, Dictionary dict, String dictType, String defaultPath) {
+String getFilePath(Scanner scanner, String dictType) {
     while (true) {
         IO.println();
-        IO.println("ЗАГРУЗКА " + dictType.toUpperCase() + " СЛОВАРЯ");
+        IO.println("РАБОТА С " + dictType.toUpperCase() + " СЛОВАРЁМ");
         IO.print("Введите путь к файлу (или 0 для выхода): ");
         String filePath = scanner.nextLine().trim();
 
         if (filePath.equals("0")) {
             IO.println("Возврат в главное меню");
-            return false;
+            return null;
         }
 
         if (filePath.isEmpty()) {
-            filePath = defaultPath;
+            filePath = "dictionary.txt";
             IO.println("Используем путь по умолчанию: " + filePath);
         }
 
-        try {
-            dict.loadFromFile(filePath);
-            IO.println("Словарь успешно загружен из файла: " + filePath);
-            return true;
-        } catch (DictionaryException e) {
-            IO.println("ОШИБКА: " + e.getMessage());
-            IO.println("Файл не найден или повреждён. Попробуйте снова.");
-        }
+        return filePath;
     }
 }
 
-void workWithDictionary(Scanner scanner, Dictionary dict, String dictName, String keyRule) {
+void loadAndWork(Scanner scanner, Dictionary dict, String dictName, String keyRule, String filePath) {
+    try {
+        dict.loadFromFile(filePath);
+        IO.println("Словарь успешно загружен из файла: " + filePath);
+        workWithDictionary(scanner, dict, dictName, keyRule, filePath);
+    } catch (DictionaryException e) {
+        IO.println("ОШИБКА: " + e.getMessage());
+        IO.println("Файл не найден или повреждён. Создаётся новый пустой словарь.");
+        workWithDictionary(scanner, dict, dictName, keyRule, filePath);
+    }
+}
+
+void workWithDictionary(Scanner scanner, Dictionary dict, String dictName, String keyRule, String filePath) {
     while (true) {
         IO.println();
         IO.println("РАБОТА СО СЛОВАРЁМ: " + dictName);
+        IO.println("Файл: " + filePath);
         IO.println("Правило для ключа: " + keyRule);
-        IO.println("Значение (перевод): любой текст");
         IO.println();
-        IO.println("1. Просмотреть содержимое");
+        IO.println("1. Просмотреть содержимое словаря");
         IO.println("2. Добавить запись");
         IO.println("3. Удалить запись");
         IO.println("4. Найти запись");
@@ -135,6 +139,40 @@ void viewDictionary(Dictionary dict, String dictName, String keyRule) {
     new Scanner(System.in).nextLine();
 }
 
+void viewAllFile(Scanner scanner, String filePath) {
+    IO.println();
+    IO.println("ВСЁ СОДЕРЖИМОЕ ФАЙЛА: " + filePath);
+    IO.println();
+
+    java.nio.file.Path path = java.nio.file.Paths.get(filePath);
+    if (!java.nio.file.Files.exists(path)) {
+        IO.println("Файл не существует");
+        IO.print("\nНажмите Enter для продолжения...");
+        scanner.nextLine();
+        return;
+    }
+
+    try (BufferedReader reader = java.nio.file.Files.newBufferedReader(path)) {
+        String line;
+        int lineNum = 0;
+        while ((line = reader.readLine()) != null) {
+            lineNum++;
+            line = line.trim();
+            if (!line.isEmpty()) {
+                IO.println(lineNum + ". " + line);
+            }
+        }
+        if (lineNum == 0) {
+            IO.println("Файл пуст");
+        }
+    } catch (IOException e) {
+        IO.println("Ошибка чтения файла: " + e.getMessage());
+    }
+
+    IO.print("\nНажмите Enter для продолжения...");
+    scanner.nextLine();
+}
+
 void addEntry(Scanner scanner, Dictionary dict) {
     IO.println();
     IO.println("ДОБАВЛЕНИЕ ЗАПИСИ");
@@ -145,11 +183,11 @@ void addEntry(Scanner scanner, Dictionary dict) {
 
     try {
         dict.addEntry(key, value);
-        IO.println("✓ Запись успешно добавлена");
+        IO.println("Запись успешно добавлена");
     } catch (ValidationException e) {
-        IO.println("✗ Ошибка валидации: " + e.getMessage());
+        IO.println("Ошибка: " + e.getMessage());
     } catch (DictionaryException e) {
-        IO.println("✗ Ошибка: " + e.getMessage());
+        IO.println("Ошибка: " + e.getMessage());
     }
 
     IO.print("Нажмите Enter для продолжения...");
@@ -164,9 +202,9 @@ void deleteEntry(Scanner scanner, Dictionary dict) {
 
     try {
         dict.deleteByKey(key);
-        IO.println("✓ Запись успешно удалена");
+        IO.println("Запись успешно удалена");
     } catch (DictionaryException e) {
-        IO.println("✗ Ошибка: " + e.getMessage());
+        IO.println("Ошибка: " + e.getMessage());
     }
 
     IO.print("Нажмите Enter для продолжения...");
@@ -181,9 +219,9 @@ void findEntry(Scanner scanner, Dictionary dict) {
 
     Optional<Entry> result = dict.findByKey(key);
     if (result.isPresent()) {
-        IO.println("✓ Найдено: " + result.get());
+        IO.println("Найдено: " + result.get());
     } else {
-        IO.println("✗ Запись с ключом '" + key + "' не найдена");
+        IO.println("Запись с ключом '" + key + "' не найдена");
     }
 
     IO.print("Нажмите Enter для продолжения...");
